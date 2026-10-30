@@ -1,0 +1,37 @@
+{
+  "name": "gigsheild",
+  "version": "2.0.0",
+  "description": "GigShield - Parametric Accident Micro-Insurance on MST Blockchain",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "serve": "node scripts/serve.js",
+    "backend": "node backend/server.js",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "check:mst": "node scripts/check-mst.js",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:mst": "hardhat run scripts/deploy.js --network mstTestnet"
+  },
+  "keywords": [
+    "solidity",
+    "micro-insurance",
+    "mst-blockchain",
+    "bridgekey",
+    "gig-economy"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^18.0.9",
+    "hardhat": "^2.28.6"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
+  }
+}

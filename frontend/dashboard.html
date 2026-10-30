@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GigShield Dashboard — Rider Micro-Insurance Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <a href="index.html" class="brand">
+        <span class="brand-icon">🛡️</span>
+        <div class="brand-text">
+          <span class="brand-title">GigShield</span>
+          <span class="brand-subtitle">Rider Dashboard</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="header-right">
+      <!-- Network Badge -->
+      <div id="networkBadge" class="badge badge-warning">
+        <span class="status-dot"></span>
+        <span id="networkText">MST Testnet</span>
+      </div>
+
+      <!-- Wallet Controls -->
+      <div id="walletSection">
+        <button id="connectBridgeKeyBtn" class="btn btn-primary btn-sm">
+          <span class="icon">🔑</span> Connect BridgeKey
+        </button>
+
+        <div id="walletConnectedCard" class="wallet-badge hidden">
+          <div class="wallet-details">
+            <span id="accountDisplay" class="wallet-addr">0x0...000</span>
+            <div class="wallet-balances">
+              <span id="tmstcBalance">0.00 tMSTC</span> • <span id="gstBalance" class="highlight-token">0 GST</span>
+            </div>
+          </div>
+          <button id="disconnectBtn" class="btn btn-xs btn-outline">Exit</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- App Layout: Sidebar + Main Content -->
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <button class="nav-tab active" data-tab="tab-overview">
+          <span class="tab-icon">📊</span> Overview
+        </button>
+        <button class="nav-tab" data-tab="tab-coverage">
+          <span class="tab-icon">🛡️</span> My Coverage
+        </button>
+        <button class="nav-tab" data-tab="tab-riders">
+          <span class="tab-icon">👥</span> Registered Riders
+        </button>
+        <button class="nav-tab" data-tab="tab-premium">
+          <span class="tab-icon">💳</span> Pay Premium
+        </button>
+        <button class="nav-tab" data-tab="tab-simulator">
+          <span class="tab-icon">🚨</span> Accident Simulator
+        </button>
+        <button class="nav-tab" data-tab="tab-claims">
+          <span class="tab-icon">💰</span> My Claims
+        </button>
+        <button class="nav-tab" data-tab="tab-history">
+          <span class="tab-icon">📜</span> Transaction History
+        </button>
+        <button class="nav-tab" data-tab="tab-settings">
+          <span class="tab-icon">⚙️</span> Wallet & Settings
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="pool-pill">
+          <span class="pill-title">Liquidity Pool</span>
+          <span id="sidePoolBalance" class="pill-val">-- GST</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Panels -->
+    <main class="content-viewport">
+      <!-- 1. OVERVIEW TAB -->
+      <section id="tab-overview" class="tab-content active">
+        <div class="tab-header">
+          <div>
+            <h2 id="welcomeGreeting">Welcome, Delivery Rider!</h2>
+            <p>Welcome back! Check your current coverage status, test balances, and quick actions.</p>
+          </div>
+          <div>
+            <span id="overviewRiderBadge" class="badge badge-secondary">Not Registered</span>
+          </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">Active Policy Status</span>
+            <h3 id="dashCoverageStatus" class="metric-val status-text">Inactive</h3>
+            <span id="dashCoverageTimer" class="metric-sub">No policy active</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">GST Test Token Balance</span>
+            <h3 id="dashGstBalance" class="metric-val highlight-token">0 GST</h3>
+            <span class="metric-sub">Available for daily premiums</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Accident Payout Benefit</span>
+            <h3 class="metric-val">500 GST</h3>
+            <span class="metric-sub">Automatic telemetry trigger</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Insurance Liquidity Pool</span>
+            <h3 id="dashPoolBalance" class="metric-val">-- GST</h3>
+            <span class="metric-sub">Smart contract reserves</span>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Profile -->
+        <div class="panels-split">
+          <!-- Rider Profile Box -->
+          <div class="panel-card">
+            <h3>🚴 Rider Profile</h3>
+            <div id="unregOverviewBox">
+              <p class="text-muted">You have not registered this wallet as a gig worker profile yet.</p>
+              <button class="btn btn-primary btn-sm mt-3" onclick="switchTab('tab-coverage')">
+                Register Rider Profile →
+              </button>
+            </div>
+            <div id="regOverviewBox" class="info-list hidden">
+              <div class="info-row">
+                <span>Full Name:</span>
+                <strong id="overHandle" class="text-accent">--</strong>
+              </div>
+              <div class="info-row">
+                <span>Category:</span>
+                <strong id="overCategory">--</strong>
+              </div>
+              <div class="info-row">
+                <span>Wallet Address:</span>
+                <span id="overWallet" class="mono-text">--</span>
+              </div>
+              <div class="info-row">
+                <span>Location:</span>
+                <span id="overLocation">--</span>
+              </div>
+              <div class="info-row">
+                <span>Registration Date:</span>
+                <span id="overRegDate">--</span>
+              </div>
+              <div class="info-row">
+                <span>Coverage Status:</span>
+                <span id="overCoverageStatus" class="badge badge-secondary">Inactive</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Box -->
+          <div class="panel-card">
+            <h3>⚡ Quick Actions</h3>
+            <div class="quick-actions-list">
+              <button class="btn btn-secondary btn-block text-left" onclick="switchTab('tab-riders')">
+                👥 View All Registered Riders
+              </button>
+              <button class="btn btn-secondary btn-block text-left" onclick="switchTab('tab-premium')">
+                🎁 Claim GST Faucet & Pay Premium
+              </button>
+              <button class="btn btn-secondary btn-block text-left" onclick="switchTab('tab-simulator')">
+                🚨 Test Crash Telematics Simulator
+              </button>
+              <button class="btn btn-secondary btn-block text-left" onclick="switchTab('tab-claims')">
+                💰 View Payouts & Claims
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. MY COVERAGE TAB -->
+      <section id="tab-coverage" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>My Coverage & Profile</h2>
+            <p>Manage your on-chain delivery rider identity and inspect active policy terms.</p>
+          </div>
+        </div>
+
+        <div class="panels-split">
+          <!-- Registration Card -->
+          <div class="panel-card">
+            <h3>Rider Registration</h3>
+            <p class="panel-desc">Register your wallet address to store your profile and link it with the MST smart contract.</p>
+
+            <form id="riderRegisterForm">
+              <div class="form-group">
+                <label for="regFullName">Full Name *</label>
+                <input type="text" id="regFullName" placeholder="e.g. Rahul Sharma" required>
+              </div>
+              <div class="form-group">
+                <label for="regWalletDisplay">Connected Wallet Address</label>
+                <input type="text" id="regWalletDisplay" placeholder="Connect BridgeKey to populate..." readonly class="mono-text">
+              </div>
+              <div class="form-group">
+                <label for="regPhone">Phone Number (Optional)</label>
+                <input type="tel" id="regPhone" placeholder="e.g. +91 98765 43210">
+              </div>
+              <div class="form-group">
+                <label for="regLoc">Location / City (Optional)</label>
+                <input type="text" id="regLoc" placeholder="e.g. Bengaluru, Karnataka">
+              </div>
+              <div class="form-group">
+                <label for="regCategory">Work Category</label>
+                <select id="regCategory" required>
+                  <option value="Food Delivery">Food Delivery (Zomato / Swiggy)</option>
+                  <option value="Grocery Delivery">Grocery Delivery (Blinkit / Zepto / Instamart)</option>
+                  <option value="Courier/Parcel">Courier & Parcel (Dunzo / Shadowfax / Porter)</option>
+                </select>
+              </div>
+              <button type="submit" id="btnSubmitRegister" class="btn btn-primary btn-block">
+                Register On-Chain Profile
+              </button>
+            </form>
+          </div>
+
+          <!-- Active Policy Inspector -->
+          <div class="panel-card">
+            <h3>Current Policy Terms</h3>
+            <div id="noCoverageNotice" class="empty-state">
+              <span class="empty-icon">🛡️</span>
+              <p>No active protection policy detected.</p>
+              <button class="btn btn-success btn-sm mt-3" onclick="switchTab('tab-premium')">
+                Activate Protection →
+              </button>
+            </div>
+
+            <div id="activeCoverageCard" class="active-policy-details hidden">
+              <div class="policy-header">
+                <span class="badge badge-success">● PROTECTION ACTIVE</span>
+                <span id="policyTimerBadge" class="timer-tag">-- remaining</span>
+              </div>
+              <div class="info-list mt-3">
+                <div class="info-row">
+                  <span>Policy ID:</span>
+                  <strong id="polId">#0</strong>
+                </div>
+                <div class="info-row">
+                  <span>Covered Payout:</span>
+                  <strong class="highlight-token">500 GST</strong>
+                </div>
+                <div class="info-row">
+                  <span>Premium Paid:</span>
+                  <span id="polPremium">--</span>
+                </div>
+                <div class="info-row">
+                  <span>Coverage Start:</span>
+                  <span id="polStart">--</span>
+                </div>
+                <div class="info-row">
+                  <span>Coverage Expiry:</span>
+                  <span id="polExpiry">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. REGISTERED RIDERS SECTION -->
+      <section id="tab-riders" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>Registered Gig Delivery Riders</h2>
+            <p>Directory of riders registered on GigShield with synchronized blockchain statistics.</p>
+          </div>
+          <button id="btnRefreshRiders" class="btn btn-sm btn-outline">🔄 Refresh Riders</button>
+        </div>
+
+        <div class="panel-card">
+          <div class="table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Rider Name</th>
+                  <th>Wallet Address</th>
+                  <th>Category & Location</th>
+                  <th>Registration Date</th>
+                  <th>Coverage Status</th>
+                  <th>Total Claims</th>
+                  <th>Total Payouts</th>
+                </tr>
+              </thead>
+              <tbody id="ridersTableBody">
+                <tr>
+                  <td colspan="7" class="empty-table">Loading registered riders...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. PAY PREMIUM TAB -->
+      <section id="tab-premium" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>Pay Micro-Premium</h2>
+            <p>Get test tokens from the faucet and activate parametric accident micro-insurance.</p>
+          </div>
+        </div>
+
+        <div class="panels-split">
+          <!-- Step A: Token Faucet & Allowance -->
+          <div class="panel-card">
+            <h3>Step 1: Test Tokens (GST)</h3>
+            <p class="panel-desc">Acquire test tokens to pay the sample ₹50/day (50 GST) premium.</p>
+
+            <div class="action-stack">
+              <div class="action-item">
+                <div>
+                  <strong>Claim Demo GST Tokens</strong>
+                  <p class="text-muted">Dispenses 500 GST tokens directly to your wallet.</p>
+                </div>
+                <button id="btnClaimFaucet" class="btn btn-secondary">
+                  🎁 Claim 500 GST
+                </button>
+              </div>
+
+              <div class="action-item">
+                <div>
+                  <strong>Approve Premium Allowance</strong>
+                  <p class="text-muted">Allows GigShield contract to collect the daily premium upon activation.</p>
+                </div>
+                <button id="btnApproveGST" class="btn btn-secondary">
+                  🔓 Approve Allowance
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step B: Activate Coverage -->
+          <div class="panel-card">
+            <h3>Step 2: Activate Protection</h3>
+            <p class="panel-desc">Select your coverage duration and activate instant parametric protection.</p>
+
+            <div class="form-group">
+              <label for="selectDays">Choose Duration</label>
+              <select id="selectDays">
+                <option value="1">1 Day (24 Hours) — 50 GST (₹50)</option>
+                <option value="3">3 Days (72 Hours) — 150 GST (₹150)</option>
+                <option value="7">7 Days (1 Week) — 350 GST (₹350)</option>
+              </select>
+            </div>
+
+            <div class="protection-summary">
+              <div class="info-row">
+                <span>Accident Coverage:</span>
+                <strong>500 GST</strong>
+              </div>
+              <div class="info-row">
+                <span>Trigger Mechanism:</span>
+                <strong>Telemetry Crash Sensor (≥ 4.0G)</strong>
+              </div>
+              <div class="info-row">
+                <span>Network:</span>
+                <strong>MST Blockchain Testnet</strong>
+              </div>
+            </div>
+
+            <button id="btnPayAndActivate" class="btn btn-success btn-block mt-4">
+              ⚡ Pay Premium & Activate Policy
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. ACCIDENT SIMULATOR TAB -->
+      <section id="tab-simulator" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>IoT Crash Telematics Simulator</h2>
+            <p>Demonstrate the end-to-end parametric trigger by simulating realistic crash sensor signals.</p>
+          </div>
+        </div>
+
+        <div class="panels-split">
+          <!-- Simulation Controls -->
+          <div class="panel-card">
+            <h3>Simulate Crash Signal</h3>
+            <p class="panel-desc">Generates a cryptographic sensor packet with accelerometer and gyroscope impact vectors.</p>
+
+            <div class="form-group">
+              <label>Select Impact G-Force</label>
+              <div class="gforce-grid">
+                <button type="button" class="btn-gchip active" data-g="6.8">
+                  <strong>6.8G</strong>
+                  <span>Severe Crash (Qualifies)</span>
+                </button>
+                <button type="button" class="btn-gchip" data-g="4.5">
+                  <strong>4.5G</strong>
+                  <span>Moderate Impact (Qualifies)</span>
+                </button>
+                <button type="button" class="btn-gchip" data-g="2.2">
+                  <strong>2.2G</strong>
+                  <span>Pothole Bump (&lt;4.0G Rejects)</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="simLocation">Crash Location</label>
+              <input type="text" id="simLocation" value="Outer Ring Road, Bellandur, Bengaluru">
+            </div>
+
+            <button id="btnRunSimulation" class="btn btn-warning btn-block">
+              🚨 Trigger Simulated Telematics Signal
+            </button>
+          </div>
+
+          <!-- Telematics Readout & Oracle Execution -->
+          <div class="panel-card">
+            <h3>Telemetry Packet & Oracle Verification</h3>
+            <div id="simEmptyState" class="empty-state">
+              <span class="empty-icon">📡</span>
+              <p>No crash event triggered. Click "Trigger Simulated Telematics Signal" to test.</p>
+            </div>
+
+            <div id="simEventBox" class="sim-packet-details hidden">
+              <div class="telemetry-readout">
+                <div class="info-row">
+                  <span>Event ID:</span>
+                  <span id="dispSimId" class="mono-text">--</span>
+                </div>
+                <div class="info-row">
+                  <span>Impact Peak:</span>
+                  <strong id="dispSimG" class="severe-text">--</strong>
+                </div>
+                <div class="info-row">
+                  <span>Location:</span>
+                  <span id="dispSimLoc">--</span>
+                </div>
+                <div class="info-row">
+                  <span>Sensor Verification:</span>
+                  <span class="badge badge-warning">Simulated Telemetry Valid</span>
+                </div>
+              </div>
+
+              <div class="oracle-action-card mt-3">
+                <p><strong>Step 2: Automated Oracle Payout</strong></p>
+                <p class="text-muted text-sm">Backend verifier validates policy eligibility and issues 500 GST directly to your wallet via smart contract.</p>
+
+                <button id="btnExecutePayout" class="btn btn-danger btn-block mt-3">
+                  ⚡ Execute Smart Contract Payout (500 GST)
+                </button>
+              </div>
+
+              <!-- Payout Success Receipt -->
+              <div id="receiptBox" class="receipt-card hidden mt-3">
+                <div class="receipt-header">
+                  <span class="receipt-icon">🎉</span>
+                  <div>
+                    <h4>500 GST Transferred!</h4>
+                    <p class="text-sm">Claim successfully disbursed on-chain.</p>
+                  </div>
+                </div>
+                <div class="info-list text-sm mt-2">
+                  <div class="info-row">
+                    <span>Tx Hash:</span>
+                    <span id="receiptTx" class="mono-text">--</span>
+                  </div>
+                  <div class="info-row">
+                    <span>Block:</span>
+                    <span id="receiptBlock">--</span>
+                  </div>
+                </div>
+                <a id="receiptExplorerLink" href="#" target="_blank" class="btn btn-outline btn-sm btn-block mt-2">
+                  🔍 View on MSTScan Explorer ↗
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. MY CLAIMS TAB -->
+      <section id="tab-claims" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>My Accident Claims</h2>
+            <p>Review past accident payouts disbursed to your connected wallet.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Event ID</th>
+                  <th>Amount Disbursed</th>
+                  <th>Transaction Hash</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="claimsTableBody">
+                <tr>
+                  <td colspan="4" class="empty-table">Connect BridgeKey wallet to view claims</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. TRANSACTION HISTORY TAB -->
+      <section id="tab-history" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>On-Chain Transaction History</h2>
+            <p>Comprehensive audit trail of policy activations and token transfers on MST Blockchain.</p>
+          </div>
+          <button id="btnRefreshTx" class="btn btn-sm btn-outline">🔄 Refresh</button>
+        </div>
+
+        <div class="panel-card">
+          <div class="table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Amount</th>
+                  <th>Details</th>
+                  <th>Block</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="txTableBody">
+                <tr>
+                  <td colspan="5" class="empty-table">Connect BridgeKey wallet to view history</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. SETTINGS & WALLET TAB -->
+      <section id="tab-settings" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h2>Wallet & Network Settings</h2>
+            <p>Inspect connected BridgeKey provider details and MST Blockchain Testnet parameters.</p>
+          </div>
+        </div>
+
+        <div class="panels-split">
+          <div class="panel-card">
+            <h3>Connected Wallet Details</h3>
+            <div class="info-list">
+              <div class="info-row">
+                <span>Wallet Provider:</span>
+                <strong>BridgeKey Extension (EIP-1193)</strong>
+              </div>
+              <div class="info-row">
+                <span>Active Account:</span>
+                <span id="settingsAccount" class="mono-text">Not Connected</span>
+              </div>
+              <div class="info-row">
+                <span>Gas Balance (tMSTC):</span>
+                <span id="settingsTmstc">0.00 tMSTC</span>
+              </div>
+              <div class="info-row">
+                <span>Token Balance (GST):</span>
+                <span id="settingsGst" class="highlight-token">0 GST</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <h3>MST Blockchain Testnet</h3>
+            <div class="info-list">
+              <div class="info-row">
+                <span>Network Name:</span>
+                <strong>MST Testnet</strong>
+              </div>
+              <div class="info-row">
+                <span>Chain ID:</span>
+                <strong>91562037 (0x5752035)</strong>
+              </div>
+              <div class="info-row">
+                <span>RPC Endpoint:</span>
+                <span class="mono-text">https://testnetrpc.mstblockchain.com</span>
+              </div>
+              <div class="info-row">
+                <span>Block Explorer:</span>
+                <a href="https://testnet.mstscan.com" target="_blank" class="accent-link">testnet.mstscan.com ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

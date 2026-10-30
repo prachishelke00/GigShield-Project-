@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GigShield — Decentralized Accident Micro-Insurance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="landing-page">
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <span class="brand-icon">🛡️</span>
+        <div class="brand-text">
+          <span class="brand-title">GigShield</span>
+          <span class="brand-subtitle">MST Micro-Insurance</span>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="#hero" class="nav-link active">Home</a>
+        <a href="#problem" class="nav-link">The Problem</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#stats" class="nav-link">Demonstration</a>
+        <a href="dashboard.html" class="btn btn-outline btn-sm">Launch Dashboard ↗</a>
+      </div>
+
+      <div class="nav-actions">
+        <button id="navConnectBtn" class="btn btn-primary btn-sm">
+          <span class="icon">🔑</span> Connect BridgeKey
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Notice Banner -->
+  <div class="demo-banner">
+    <span>💡 <strong>MST Buildathon Prototype:</strong> Parametric micro-insurance using <strong>GST Test Tokens</strong> on MST Blockchain Testnet. Simulated coverage with automatic oracle payouts.</span>
+  </div>
+
+  <!-- Hero Section -->
+  <section id="hero" class="hero-section">
+    <div class="hero-content">
+      <div class="badge badge-accent">Web3 Parametric Micro-Insurance</div>
+      <h1 class="hero-title">Your Safety.<br><span class="gradient-text">Your Earnings.</span><br>Protected.</h1>
+      <p class="hero-desc">
+        A decentralized accident micro-protection protocol tailored for gig delivery riders. Pay a small daily premium, get instant telematics crash verification, and receive immediate smart contract token payouts on MST Blockchain.
+      </p>
+      <div class="hero-cta">
+        <a href="dashboard.html" class="btn btn-primary btn-lg">
+          ⚡ Get Protected Now
+        </a>
+        <a href="#how-it-works" class="btn btn-secondary btn-lg">
+          Explore How It Works
+        </a>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-item"><span>🔒</span> Non-Custodial Pool</div>
+        <div class="trust-item"><span>⚡</span> Instant Oracle Trigger</div>
+        <div class="trust-item"><span>🌐</span> MST Testnet Native</div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="rider-card-illustration">
+        <div class="illustration-header">
+          <span class="pulse-indicator"></span>
+          <span>Parametric Protection Active</span>
+        </div>
+        <div class="illustration-body">
+          <div class="ill-icon">🛵💨</div>
+          <div class="ill-stat">
+            <span class="ill-label">Daily Sample Premium</span>
+            <span class="ill-val">₹50 / day <small>(50 GST)</small></span>
+          </div>
+          <div class="ill-stat">
+            <span class="ill-label">Automated Emergency Payout</span>
+            <span class="ill-val highlight-green">500 GST</span>
+          </div>
+          <div class="ill-telemetry">
+            <span>📡 Telematics Threshold: <strong>≥ 4.0G Impact</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section id="problem" class="section problem-section">
+    <div class="section-header">
+      <span class="section-tag">THE REALITY</span>
+      <h2>The Gig Worker Dilemma</h2>
+      <p>Millions of delivery riders power the on-demand economy, yet face acute financial precarity with zero safety net.</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="feature-card">
+        <div class="card-icon">⚠️</div>
+        <h3>High Road Risk Exposure</h3>
+        <p>Food and courier delivery riders log 10–14 hours daily in chaotic traffic, facing high probabilities of acute road accidents.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">⏳</div>
+        <h3>Tedious Claim Delays</h3>
+        <p>Traditional insurance claims require weeks of paperwork, manual adjuster inspections, and bureaucratic hurdles during emergencies.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">💸</div>
+        <h3>Unviable Lump-Sum Premiums</h3>
+        <p>Conventional annual or quarterly insurance premiums are prohibitive for workers earning daily variable wages.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="section how-it-works-section">
+    <div class="section-header">
+      <span class="section-tag">WORKFLOW</span>
+      <h2>How GigShield Works</h2>
+      <p>A transparent 4-step parametric workflow running on decentralized smart contracts.</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Register Rider Profile</h3>
+        <p>Connect your BridgeKey wallet and register your delivery identity directly on MST Blockchain.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Pay Daily Micro-Premium</h3>
+        <p>Activate flexible 24-hour accident protection with a sample ₹50 (50 GST) token transfer.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>Telematics Detection</h3>
+        <p>Simulated IoT crash sensors detect peak impact forces (≥ 4.0G) and dispatch signed cryptographic proofs.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>Automatic Token Payout</h3>
+        <p>The GigShield smart contract verifies conditions and automatically deposits 500 GST directly to your wallet.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="section features-section">
+    <div class="section-header">
+      <span class="section-tag">CAPABILITIES</span>
+      <h2>Built for Trust & Transparency</h2>
+      <p>Harnessing blockchain primitives to eliminate claim bureaucracy.</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="feature-card">
+        <div class="card-icon">⚡</div>
+        <h3>Parametric Execution</h3>
+        <p>No human claim review needed. Payout conditions are strictly governed by transparent, immutable smart contract code.</p>
+      </div>
+      <div class="feature-card">
+        <div class="card-icon">🔑</div>
+        <h3>Native BridgeKey Integration</h3>
+        <p>Built specifically for BridgeKey Wallet on MST Blockchain for seamless Web3 onboarding and signing.</p>
+      </div>
+      <div class="feature-card">
+        <div class="card-icon">📜</div>
+        <h3>Auditable History</h3>
+        <p>Every premium payment, policy activation, and claim disbursement is permanently logged on MSTScan explorer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section (Demo metrics) -->
+  <section id="stats" class="section stats-section">
+    <div class="section-header">
+      <span class="section-tag">SIMULATED BENCHMARK</span>
+      <h2>Demonstration Metrics</h2>
+      <p>Illustrative platform benchmarks designed for the MST Buildathon prototype.</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">50 GST</div>
+        <div class="stat-title">Daily Micro-Premium</div>
+        <div class="stat-sub">Simulates ₹50 / 24hr coverage</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">500 GST</div>
+        <div class="stat-title">Accident Benefit</div>
+        <div class="stat-sub">Instant emergency token payout</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">4.0G</div>
+        <div class="stat-title">Severity Threshold</div>
+        <div class="stat-sub">Validated crash accelerometer trigger</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">&lt; 3 Sec</div>
+        <div class="stat-title">Settlement Speed</div>
+        <div class="stat-sub">Direct on-chain execution</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="brand">
+          <span class="brand-icon">🛡️</span>
+          <span class="brand-title">GigShield</span>
+        </div>
+        <p>Parametric accident micro-protection for gig delivery workers on MST Blockchain.</p>
+      </div>
+      <div class="footer-meta">
+        <p><strong>Network:</strong> MST Blockchain Testnet (91562037)</p>
+        <p><strong>Wallet:</strong> BridgeKey Wallet Only</p>
+        <p><strong>Disclaimer:</strong> Educational prototype for MST Blockchain Buildathon. Uses simulated tokens and data.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script>
+    document.getElementById("navConnectBtn").addEventListener("click", () => {
+      window.location.href = "dashboard.html";
+    });
+  </script>
+</body>
+</html>
