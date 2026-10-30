@@ -60,7 +60,9 @@ window.GIGSHIELD_CONFIG = {
   rpcUrl: "https://testnetrpc.mstblockchain.com",
   explorerUrl: "https://testnet.mstscan.com",
   faucetUrl: "https://faucet.mstblockchain.com/",
-  backendUrl: "http://localhost:3001",
+  backendUrl: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3001"
+    : window.location.origin,
   gigShieldAbi: ${JSON.stringify(gigShieldArtifact.abi, null, 2)},
   gstTokenAbi: ${JSON.stringify(tokenArtifact.abi, null, 2)}
 };

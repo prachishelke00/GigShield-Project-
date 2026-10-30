@@ -12,7 +12,7 @@ class RiderService {
     }
 
     const normalizedAddr = walletAddress.toLowerCase();
-    const existing = db.getRider(normalizedAddr);
+    const existing = await db.getRider(normalizedAddr);
 
     const riderData = {
       fullName: fullName.trim(),
@@ -23,7 +23,7 @@ class RiderService {
       registeredAt: existing && existing.registeredAt ? existing.registeredAt : Date.now()
     };
 
-    const saved = db.saveRider(riderData);
+    const saved = await db.saveRider(riderData);
     return saved;
   }
 
@@ -32,7 +32,7 @@ class RiderService {
       throw new Error("Invalid address format");
     }
 
-    const dbRider = db.getRider(address);
+    const dbRider = await db.getRider(address);
     let onChainReg = false;
     let onChainRider = null;
 
@@ -64,7 +64,7 @@ class RiderService {
   }
 
   async getAllRidersWithStats() {
-    const allDbRiders = db.getAllRiders();
+    const allDbRiders = await db.getAllRiders();
 
     // Enrich each rider with live on-chain stats (coverage, claims, payouts)
     const enrichedList = await Promise.all(

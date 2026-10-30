@@ -42,6 +42,10 @@ npm run backend
 ```
 *Runs on `http://localhost:3001`.*
 
+### Deploy the Web App to Vercel
+
+See the [Vercel deployment steps](docs/DEPLOYMENT.md#deploy-the-web-app-to-vercel) for project settings, hosted rider storage, and required environment variables.
+
 ### 4. Launch the Frontend
 ```bash
 npm start

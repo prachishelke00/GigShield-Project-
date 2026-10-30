@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "frontend",
+  "functions": {
+    "api/[...path].js": {
+      "includeFiles": "artifacts/contracts/**"
+    }
+  }
+}

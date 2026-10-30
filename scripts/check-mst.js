@@ -6,7 +6,7 @@ async function main() {
   console.log("   MST TESTNET CONNECTIVITY & DIAGNOSTIC ");
   console.log("=========================================\n");
 
-  const rpcUrl = process.env.MST_TESTNET_RPC || "https://testnetrpc.mstblockchain.com";
+  const rpcUrl = process.env.MST_TESTNET_RPC || process.env.MST_RPC || "https://testnetrpc.mstblockchain.com";
   console.log("Configured RPC:", rpcUrl);
 
   const provider = new hre.ethers.JsonRpcProvider(rpcUrl);
@@ -22,13 +22,13 @@ async function main() {
     return;
   }
 
-  const rawKey = process.env.PRIVATE_KEY;
+  const rawKey = process.env.DEPLOYER_PRIVATE_KEY || process.env.PRIVATE_KEY;
   if (!rawKey || rawKey.trim() === "") {
-    console.log("\n[Notice] No PRIVATE_KEY configured in .env yet.");
+    console.log("\n[Notice] No DEPLOYER_PRIVATE_KEY or PRIVATE_KEY configured in .env yet.");
     console.log("To deploy to MST Testnet:");
     console.log("1. Create a dedicated testnet wallet in BridgeKey or MetaMask.");
     console.log("2. Request test tokens from https://faucet.mstblockchain.com/");
-    console.log("3. Add your testnet private key to .env as PRIVATE_KEY=0x...");
+    console.log("3. Add your testnet private key to .env as DEPLOYER_PRIVATE_KEY=0x...");
     console.log("4. Re-run this check script: node scripts/check-mst.js\n");
     return;
   }
@@ -60,4 +60,3 @@ main().catch((err) => {
   console.error("Diagnostic failed:", err);
   process.exitCode = 1;
 });
-

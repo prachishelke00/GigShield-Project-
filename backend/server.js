@@ -12,10 +12,14 @@ app.use(express.json());
 // API Routes
 app.use("/api", apiRoutes);
 
-app.listen(PORT, () => {
-  console.log("==================================================");
-  console.log(`  GIGSHIELD ORACLE & API BACKEND SERVICE          `);
-  console.log(`  Server listening on: http://localhost:${PORT}   `);
-  console.log(`  Network: MST Blockchain Testnet (91562037)      `);
-  console.log("==================================================");
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log("==================================================");
+    console.log(`  GIGSHIELD ORACLE & API BACKEND SERVICE          `);
+    console.log(`  Server listening on: http://localhost:${PORT}   `);
+    console.log(`  Network: MST Blockchain Testnet (91562037)      `);
+    console.log("==================================================");
+  });
+}
+
+module.exports = app;
