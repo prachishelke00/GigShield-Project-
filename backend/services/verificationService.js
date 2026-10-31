@@ -1,8 +1,11 @@
-const { gigShieldContract, verifierWallet } = require("../config/blockchain");
+const { gigShieldContract, verifierWallet, IS_MAINNET } = require("../config/blockchain");
 const { ethers } = require("ethers");
 
 class VerificationService {
   simulateAccident({ riderAddress, customSeverity, customLocation }) {
+    if (IS_MAINNET) {
+      throw new Error("Synthetic accident simulation is disabled on Mainnet.");
+    }
     if (!riderAddress || !ethers.isAddress(riderAddress)) {
       throw new Error("Valid riderAddress is required");
     }
@@ -54,6 +57,9 @@ class VerificationService {
   }
 
   async verifyAndExecutePayout({ eventId, riderAddress, impactSeverity, location, sensorDataURI }) {
+    if (IS_MAINNET) {
+      throw new Error("Automated payouts are disabled on Mainnet until a production oracle is reviewed and implemented.");
+    }
     if (!eventId || !riderAddress || !impactSeverity) {
       throw new Error("Missing required event data");
     }
@@ -102,4 +108,3 @@ class VerificationService {
 }
 
 module.exports = new VerificationService();
-

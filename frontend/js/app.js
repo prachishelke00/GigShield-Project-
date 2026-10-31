@@ -229,7 +229,7 @@
     } finally {
       if (connectBridgeKeyBtn) {
         connectBridgeKeyBtn.disabled = false;
-        connectBridgeKeyBtn.innerHTML = `<span class="icon">🔑</span> Connect BridgeKey`;
+        connectBridgeKeyBtn.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8 2 2-2 2 2 2-3 3-2-2-3 3"/></svg> Connect BridgeKey`;
       }
     }
   }
@@ -384,7 +384,7 @@
           // Update Status Badge
           if (overviewRiderBadge) {
             overviewRiderBadge.className = "badge badge-success";
-            overviewRiderBadge.innerText = "✓ Registered Rider";
+            overviewRiderBadge.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Registered Rider`;
           }
 
           // Show Profile Box
@@ -516,7 +516,7 @@
           }
         }
 
-        alert(`✓ Registration successful!\n\nWelcome to GigShield, ${fullName}. Your profile has been stored and linked to wallet ${userAddress.slice(0, 8)}...`);
+        alert(`Registration successful!\n\nWelcome to GigShield, ${fullName}. Your profile has been stored and linked to wallet ${userAddress.slice(0, 8)}...`);
 
         // Refresh UI dynamically without page reload
         await refreshDashboard();
@@ -541,13 +541,13 @@
         btnClaimFaucet.innerText = "Dispensing 500 GST...";
         const tx = await tokenContract.requestDemoTokens(userAddress);
         await tx.wait();
-        alert("✓ 500 GST demo tokens received!");
+        alert("500 GST demo tokens received!");
         await refreshDashboard();
       } catch (err) {
         alert("Faucet failed: " + (err.reason || err.message));
       } finally {
         btnClaimFaucet.disabled = false;
-        btnClaimFaucet.innerText = "🎁 Claim 500 GST";
+        btnClaimFaucet.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9m-2-5h20v5H2zm10 0v14m0-14H7.5a2.5 2.5 0 1 1 2.5-2.5C10 6 12 7 12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z"/></svg> Claim 500 GST`;
       }
     });
   }
@@ -562,13 +562,13 @@
         const amount = ethers.parseEther("10000");
         const tx = await tokenContract.approve(CONFIG.gigShieldAddress, amount);
         await tx.wait();
-        alert("✓ GigShield smart contract approved to collect micro-premiums!");
+        alert("GigShield smart contract approved to collect micro-premiums!");
         await refreshDashboard();
       } catch (err) {
         alert("Approval failed: " + (err.reason || err.message));
       } finally {
         btnApproveGST.disabled = false;
-        btnApproveGST.innerText = "🔓 Approve Allowance";
+        btnApproveGST.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Approve Allowance`;
       }
     });
   }
@@ -583,7 +583,7 @@
         const days = parseInt(selectDays.value, 10);
         const tx = await gigShieldContract.activateCoverage(days);
         await tx.wait();
-        alert(`✓ ${days}-day accident micro-insurance activated successfully!`);
+        alert(`${days}-day accident micro-insurance activated successfully!`);
         await refreshDashboard();
         await fetchRegisteredRiders();
         switchTab("tab-overview");
@@ -591,7 +591,7 @@
         alert("Activation failed: " + (err.reason || err.message));
       } finally {
         btnPayAndActivate.disabled = false;
-        btnPayAndActivate.innerText = "⚡ Pay Premium & Activate Policy";
+        btnPayAndActivate.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg> Pay Premium & Activate Policy`;
       }
     });
   }
@@ -639,7 +639,7 @@
         alert("Simulation error: " + err.message + "\nEnsure backend is running on port 3001 (`npm run backend`).");
       } finally {
         btnRunSimulation.disabled = false;
-        btnRunSimulation.innerText = "🚨 Trigger Simulated Telematics Signal";
+        btnRunSimulation.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2m6.4.6-1.4 1.4M21 12h-2m-2.6 6.4-1.4-1.4M12 21v-2m-6.4-2.6 1.4-1.4M3 12h2m2.6-6.4 1.4 1.4"/><circle cx="12" cy="12" r="5"/></svg> Trigger Simulated Telematics Signal`;
       }
     });
   }
@@ -672,14 +672,14 @@
         if (receiptBlock) receiptBlock.innerText = `#${data.blockNumber}`;
         if (receiptExplorerLink) receiptExplorerLink.href = data.explorerUrl;
 
-        alert("🎉 500 GST Payout successfully executed on MST Blockchain!");
+        alert("500 GST Payout successfully executed on MST Blockchain!");
         await refreshDashboard();
         await fetchRegisteredRiders();
       } catch (err) {
         alert("Oracle Verification Failed: " + err.message);
       } finally {
         btnExecutePayout.disabled = false;
-        btnExecutePayout.innerText = "⚡ Execute Smart Contract Payout (500 GST)";
+        btnExecutePayout.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg> Execute Smart Contract Payout (500 GST)`;
       }
     });
   }

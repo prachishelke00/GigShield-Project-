@@ -2,16 +2,30 @@ const express = require("express");
 const router = express.Router();
 const riderService = require("../services/riderService");
 const verificationService = require("../services/verificationService");
-const { provider, verifierWallet, GIGSHIELD_ADDRESS, GST_TOKEN_ADDRESS } = require("../config/blockchain");
+const { provider, verifierWallet, GIGSHIELD_ADDRESS, GST_TOKEN_ADDRESS, CHAIN_ID, NETWORK_NAME } = require("../config/blockchain");
 
 // Health Check
 router.get("/health", async (req, res) => {
   try {
+    if (!GIGSHIELD_ADDRESS || !GST_TOKEN_ADDRESS) {
+      throw new Error(`${NETWORK_NAME} contract addresses are not configured.`);
+    }
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== CHAIN_ID) {
+      throw new Error(`MST_RPC connected to chain ${network.chainId}; expected ${CHAIN_ID}.`);
+    }
+    const [gigShieldCode, tokenCode] = await Promise.all([
+      provider.getCode(GIGSHIELD_ADDRESS),
+      provider.getCode(GST_TOKEN_ADDRESS)
+    ]);
+    if (gigShieldCode === "0x" || tokenCode === "0x") {
+      throw new Error("GigShield or GST contract code is missing at the configured MST address. Set GIGSHIELD_ADDRESS and GST_TOKEN_ADDRESS to deployed contracts.");
+    }
     const blockNumber = await provider.getBlockNumber();
     res.json({
       status: "online",
-      network: "MST Testnet",
-      chainId: 91562037,
+      network: NETWORK_NAME,
+      chainId: Number(network.chainId),
       currentBlock: blockNumber,
       verifierConfigured: !!verifierWallet,
       verifierAddress: verifierWallet ? verifierWallet.address : null,
@@ -29,7 +43,7 @@ router.post("/rider/register", async (req, res) => {
     const saved = await riderService.registerRiderProfile(req.body);
     res.json({ success: true, rider: saved });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    res.status(error.statusCode || 500).json({ success: false, error: error.message });
   }
 });
 

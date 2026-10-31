@@ -3,12 +3,30 @@ const { ethers } = require("ethers");
 const db = require("./db");
 
 class RiderService {
-  async registerRiderProfile({ fullName, walletAddress, phoneNumber, location, workerCategory }) {
-    if (!walletAddress || !ethers.isAddress(walletAddress)) {
-      throw new Error("A valid Ethereum wallet address is required.");
+  async registerRiderProfile(profile) {
+    if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+      const error = new Error("A rider profile is required.");
+      error.statusCode = 400;
+      throw error;
     }
-    if (!fullName || fullName.trim().length === 0) {
-      throw new Error("Full name is required.");
+
+    const { fullName, walletAddress, phoneNumber, location, workerCategory } = profile;
+    if (!walletAddress || !ethers.isAddress(walletAddress)) {
+      const error = new Error("A valid Ethereum wallet address is required.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (typeof fullName !== "string" || fullName.trim().length === 0) {
+      const error = new Error("Full name is required.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if ((phoneNumber != null && typeof phoneNumber !== "string") ||
+        (location != null && typeof location !== "string") ||
+        (workerCategory != null && typeof workerCategory !== "string")) {
+      const error = new Error("Phone number, location, and work category must be text values.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const normalizedAddr = walletAddress.toLowerCase();
@@ -19,7 +37,7 @@ class RiderService {
       walletAddress: walletAddress,
       phoneNumber: phoneNumber ? phoneNumber.trim() : "",
       location: location ? location.trim() : "",
-      workerCategory: workerCategory || "Food Delivery",
+      workerCategory: workerCategory ? workerCategory.trim() : "Food Delivery",
       registeredAt: existing && existing.registeredAt ? existing.registeredAt : Date.now()
     };
 

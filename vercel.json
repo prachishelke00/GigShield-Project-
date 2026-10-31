@@ -2,6 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "frontend",
   "functions": {
+    "api/rider/register.js": {
+      "includeFiles": "artifacts/contracts/**"
+    },
     "api/[...path].js": {
       "includeFiles": "artifacts/contracts/**"
     }

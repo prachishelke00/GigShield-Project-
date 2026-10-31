@@ -3,7 +3,17 @@ const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
 
-const MST_RPC = process.env.MST_RPC || "https://testnetrpc.mstblockchain.com";
+const NETWORK = process.env.BLOCKCHAIN_NETWORK || "testnet";
+if (NETWORK !== "testnet" && NETWORK !== "mainnet") {
+  throw new Error("BLOCKCHAIN_NETWORK must be either testnet or mainnet.");
+}
+
+const IS_MAINNET = NETWORK === "mainnet";
+const NETWORK_NAME = IS_MAINNET ? "MST Mainnet" : "MST Testnet";
+const MST_RPC = IS_MAINNET
+  ? (process.env.MAINNET_RPC_URL || "https://mariorpc.mstblockchain.com")
+  : (process.env.MST_RPC || "https://testnetrpc.mstblockchain.com");
+const CHAIN_ID = IS_MAINNET ? 4646 : Number(process.env.CHAIN_ID || 91562037);
 const provider = new ethers.JsonRpcProvider(MST_RPC);
 
 // Load artifacts for ABIs
@@ -24,9 +34,15 @@ try {
   console.warn("Artifact load warning:", err.message);
 }
 
-const GIGSHIELD_ADDRESS = process.env.GIGSHIELD_ADDRESS || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-const GST_TOKEN_ADDRESS = process.env.GST_TOKEN_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-const VERIFIER_PRIVATE_KEY = process.env.VERIFIER_PRIVATE_KEY || "";
+const GIGSHIELD_ADDRESS = IS_MAINNET
+  ? (process.env.MAINNET_GIGSHIELD_ADDRESS || "")
+  : (process.env.GIGSHIELD_ADDRESS || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512");
+const GST_TOKEN_ADDRESS = IS_MAINNET
+  ? (process.env.MAINNET_GST_TOKEN_ADDRESS || "")
+  : (process.env.GST_TOKEN_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3");
+const VERIFIER_PRIVATE_KEY = IS_MAINNET
+  ? (process.env.MAINNET_VERIFIER_PRIVATE_KEY || "")
+  : (process.env.VERIFIER_PRIVATE_KEY || "");
 
 let verifierWallet = null;
 let gigShieldContract = null;
@@ -61,6 +77,7 @@ module.exports = {
   tokenContract,
   GIGSHIELD_ADDRESS,
   GST_TOKEN_ADDRESS,
-  CHAIN_ID: 91562037
+  CHAIN_ID,
+  NETWORK_NAME,
+  IS_MAINNET
 };
-

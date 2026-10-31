@@ -87,6 +87,41 @@ describe("GigShieldToken (GST ERC-20)", function () {
   });
 });
 
+describe("GigShieldMainnetToken (fixed-supply GST)", function () {
+  let token, owner, rider;
+
+  beforeEach(async function () {
+    [owner, rider] = await ethers.getSigners();
+    const MainnetToken = await ethers.getContractFactory("GigShieldMainnetToken");
+    token = await MainnetToken.deploy();
+    await token.waitForDeployment();
+  });
+
+  it("mints the fixed maximum supply to the deployer", async function () {
+    const maxSupply = ethers.parseEther("1000000");
+    expect(await token.MAX_SUPPLY()).to.equal(maxSupply);
+    expect(await token.totalSupply()).to.equal(maxSupply);
+    expect(await token.balanceOf(owner.address)).to.equal(maxSupply);
+  });
+
+  it("does not expose faucet or additional mint functions", async function () {
+    const functionNames = token.interface.fragments
+      .filter((fragment) => fragment.type === "function")
+      .map((fragment) => fragment.name);
+    expect(functionNames).not.to.include("requestDemoTokens");
+    expect(functionNames).not.to.include("mint");
+  });
+
+  it("supports standard transfers and approved premium collection", async function () {
+    const amount = ethers.parseEther("50");
+    await token.transfer(rider.address, amount);
+    await token.connect(rider).approve(owner.address, amount);
+    await token.transferFrom(rider.address, owner.address, amount);
+    expect(await token.balanceOf(rider.address)).to.equal(0n);
+    expect(await token.balanceOf(owner.address)).to.equal(await token.MAX_SUPPLY());
+  });
+});
+
 describe("GigShield (Main Insurance Contract)", function () {
   let token, gigShield, owner, verifier, rider1, rider2, stranger;
 

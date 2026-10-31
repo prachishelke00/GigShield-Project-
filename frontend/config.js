@@ -2,8 +2,8 @@
 // MST Blockchain Testnet
 
 window.GIGSHIELD_CONFIG = {
-  gigShieldAddress: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-  gstTokenAddress: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  gigShieldAddress: "0x7789AA202C62B76099433Eb91B9e4d2eE139a9CC",
+  gstTokenAddress: "0x1cbf592E8677cb24D00bB75519155670f51d7e7a",
   chainId: 91562037,
   chainIdHex: "0x5752035",
   chainName: "MST Testnet",

@@ -15,7 +15,8 @@
     "test": "hardhat test",
     "check:mst": "node scripts/check-mst.js",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
-    "deploy:mst": "hardhat run scripts/deploy.js --network mstTestnet"
+    "deploy:mst": "hardhat run scripts/deploy.js --network mstTestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy-mainnet.js --network mstMainnet"
   },
   "keywords": [
     "solidity",

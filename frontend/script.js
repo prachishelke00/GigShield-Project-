@@ -22,7 +22,38 @@
   let selectedSeverity = 68; // 6.8G
   let activeSimulation = null;
 
-  const CONFIG = window.GIGSHIELD_CONFIG || {};
+  const IS_MAINNET = new URLSearchParams(window.location.search).get("network") === "mainnet";
+  const CONFIG = IS_MAINNET
+    ? (window.GIGSHIELD_MAINNET_CONFIG || {})
+    : (window.GIGSHIELD_CONFIG || {});
+  const NATIVE_CURRENCY_SYMBOL = CONFIG.nativeCurrency
+    ? CONFIG.nativeCurrency.symbol
+    : "tMSTC";
+
+  async function fetchApiJson(url, options) {
+    const response = await fetch(url, options);
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.toLowerCase().includes("application/json")) {
+      const responseText = await response.text();
+      const detail = responseText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      const status = response.ok ? "" : ` (${response.status})`;
+      throw new Error(`API returned a non-JSON response${status}.${detail ? ` ${detail.slice(0, 180)}` : ""}`);
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`API returned invalid JSON (${response.status}).`);
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || `API request failed (${response.status}).`);
+    }
+
+    return data;
+  }
 
   // Global Tab Switcher Function
   window.switchTab = function (tabId) {
@@ -123,6 +154,28 @@
   const settingsAccount = document.getElementById("settingsAccount");
   const settingsTmstc = document.getElementById("settingsTmstc");
   const settingsGst = document.getElementById("settingsGst");
+  const networkInfoName = document.getElementById("networkInfoName");
+  const networkInfoChainId = document.getElementById("networkInfoChainId");
+  const networkInfoRpc = document.getElementById("networkInfoRpc");
+  const networkInfoExplorer = document.getElementById("networkInfoExplorer");
+  const gasBalanceLabel = document.getElementById("gasBalanceLabel");
+
+  if (IS_MAINNET) {
+    if (networkText) networkText.innerText = CONFIG.chainName || "MST Mainnet";
+    if (tmstcBalance) tmstcBalance.innerText = `0.00 ${NATIVE_CURRENCY_SYMBOL}`;
+    if (networkInfoName) networkInfoName.innerText = CONFIG.chainName || "MST Mainnet";
+    if (networkInfoChainId) networkInfoChainId.innerText = `${CONFIG.chainId} (${CONFIG.chainIdHex})`;
+    if (networkInfoRpc) networkInfoRpc.innerText = CONFIG.rpcUrl;
+    if (networkInfoExplorer) {
+      networkInfoExplorer.href = CONFIG.explorerUrl;
+      networkInfoExplorer.innerText = `${new URL(CONFIG.explorerUrl).host} ↗`;
+    }
+    if (gasBalanceLabel) gasBalanceLabel.innerText = `Gas Balance (${NATIVE_CURRENCY_SYMBOL}):`;
+  }
+
+  if (IS_MAINNET && btnClaimFaucet) {
+    btnClaimFaucet.classList.add("hidden");
+  }
 
   /**
    * 1. BridgeKey Detection (Strictly no MetaMask)
@@ -151,6 +204,10 @@
    */
   async function connectWallet() {
     try {
+      if (IS_MAINNET && (!CONFIG.mainnetReady || !CONFIG.gigShieldAddress || !CONFIG.gstTokenAddress)) {
+        throw new Error("Mainnet contracts are not configured. Do not use the Testnet deployment addresses on Mainnet.");
+      }
+
       const bkProvider = getBridgeKeyProvider();
       if (!bkProvider) {
         alert(
@@ -188,7 +245,7 @@
       } else {
         if (networkBadge) {
           networkBadge.className = "badge badge-success";
-          networkText.innerText = CONFIG.chainName || "MST Testnet";
+          networkText.innerText = CONFIG.chainName || "MST Network";
         }
       }
 
@@ -229,7 +286,7 @@
     } finally {
       if (connectBridgeKeyBtn) {
         connectBridgeKeyBtn.disabled = false;
-        connectBridgeKeyBtn.innerHTML = `<span class="icon">🔑</span> Connect BridgeKey`;
+        connectBridgeKeyBtn.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8 2 2-2 2 2 2-3 3-2-2-3 3"/></svg> Connect BridgeKey`;
       }
     }
   }
@@ -247,7 +304,7 @@
           params: [{
             chainId: CONFIG.chainIdHex,
             chainName: CONFIG.chainName,
-            nativeCurrency: { name: "tMSTC", symbol: "tMSTC", decimals: 18 },
+            nativeCurrency: CONFIG.nativeCurrency || { name: "tMSTC", symbol: "tMSTC", decimals: 18 },
             rpcUrls: [CONFIG.rpcUrl],
             blockExplorerUrls: [CONFIG.explorerUrl]
           }]
@@ -268,7 +325,7 @@
     if (accountDisplay) accountDisplay.innerText = "";
 
     if (welcomeGreeting) welcomeGreeting.innerText = "Welcome, Delivery Rider!";
-    if (tmstcBalance) tmstcBalance.innerText = "0.00 tMSTC";
+    if (tmstcBalance) tmstcBalance.innerText = `0.00 ${NATIVE_CURRENCY_SYMBOL}`;
     if (gstBalance) gstBalance.innerText = "0 GST";
     if (dashGstBalance) dashGstBalance.innerText = "0 GST";
 
@@ -299,11 +356,11 @@
     if (!userAddress || !provider) return;
 
     try {
-      // 1. Gas (tMSTC)
+      // 1. Native gas balance
       const balanceWei = await provider.getBalance(userAddress);
       const tmstcFormatted = parseFloat(ethers.formatEther(balanceWei)).toFixed(3);
-      if (tmstcBalance) tmstcBalance.innerText = `${tmstcFormatted} tMSTC`;
-      if (settingsTmstc) settingsTmstc.innerText = `${tmstcFormatted} tMSTC`;
+      if (tmstcBalance) tmstcBalance.innerText = `${tmstcFormatted} ${NATIVE_CURRENCY_SYMBOL}`;
+      if (settingsTmstc) settingsTmstc.innerText = `${tmstcFormatted} ${NATIVE_CURRENCY_SYMBOL}`;
 
       // 2. GST Token Balance
       if (tokenContract) {
@@ -370,8 +427,7 @@
 
       // Query backend for rider info
       try {
-        const res = await fetch(`${CONFIG.backendUrl || "http://localhost:3001"}/api/rider/${userAddress}`);
-        const riderData = await res.json();
+        const riderData = await fetchApiJson(`${CONFIG.backendUrl || "http://localhost:3001"}/api/rider/${userAddress}`);
 
         if (riderData && riderData.isRegistered) {
           const displayName = riderData.fullName || riderData.nickname || "Delivery Rider";
@@ -384,7 +440,7 @@
           // Update Status Badge
           if (overviewRiderBadge) {
             overviewRiderBadge.className = "badge badge-success";
-            overviewRiderBadge.innerText = "✓ Registered Rider";
+            overviewRiderBadge.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Registered Rider`;
           }
 
           // Show Profile Box
@@ -427,17 +483,18 @@
     if (!ridersTableBody) return;
 
     try {
-      const res = await fetch(`${CONFIG.backendUrl || "http://localhost:3001"}/api/riders`);
-      const data = await res.json();
+      const data = await fetchApiJson(`${CONFIG.backendUrl || "http://localhost:3001"}/api/riders`);
 
-      if (!data.success || !data.riders || data.riders.length === 0) {
+      if (!data.success) {
+        throw new Error(data.error || "Failed to load registered riders.");
+      }
+      if (!data.riders || data.riders.length === 0) {
         ridersTableBody.innerHTML = `<tr><td colspan="7" class="empty-table">No riders registered in the network yet. Be the first to register!</td></tr>`;
         return;
       }
 
       ridersTableBody.innerHTML = data.riders.map(r => {
         const isCurrent = userAddress && r.walletAddress.toLowerCase() === userAddress.toLowerCase();
-        const shortAddr = `${r.walletAddress.slice(0, 6)}...${r.walletAddress.slice(-4)}`;
         const regDateStr = new Date(r.registeredAt).toLocaleDateString();
         const statusBadge = r.coverageStatus === "Active" ? "badge-success" : (r.coverageStatus === "Expired" ? "badge-warning" : "badge-secondary");
 
@@ -448,8 +505,8 @@
               ${isCurrent ? ' <span class="badge badge-accent">You</span>' : ''}
             </td>
             <td class="mono-text">
-              <a href="https://testnet.mstscan.com/address/${r.walletAddress}" target="_blank" title="${r.walletAddress}">
-                ${shortAddr} ↗
+              <a href="${CONFIG.explorerUrl}/address/${r.walletAddress}" target="_blank" title="${r.walletAddress}">
+                ${r.walletAddress} ↗
               </a>
             </td>
             <td>${r.workerCategory} <span class="text-muted text-sm">(${r.location || "Global"})</span></td>
@@ -483,40 +540,71 @@
         return alert("Please enter your full name.");
       }
 
+      let onChainRegistrationVerified = false;
       try {
-        btnSubmitRegister.disabled = true;
-        btnSubmitRegister.innerText = "Saving Profile & Confirming On-Chain...";
+        if (!provider || !signer || !gigShieldContract) {
+          throw new Error("Connect BridgeKey and ensure the MST GigShield contract is configured.");
+        }
 
-        // 1. Save profile to Backend JSON Database
-        const backendRes = await fetch(`${CONFIG.backendUrl || "http://localhost:3001"}/api/rider/register`, {
+        const signerAddress = await signer.getAddress();
+        if (signerAddress.toLowerCase() !== userAddress.toLowerCase()) {
+          throw new Error("BridgeKey account changed. Reconnect the wallet before registering.");
+        }
+
+        const network = await provider.getNetwork();
+        if (Number(network.chainId) !== CONFIG.chainId) {
+          throw new Error(`Switch BridgeKey to ${CONFIG.chainName} (chain ${CONFIG.chainId}) before registering.`);
+        }
+
+        const contractCode = await provider.getCode(CONFIG.gigShieldAddress);
+        if (contractCode === "0x") {
+          throw new Error(`No GigShield contract is deployed at the configured ${CONFIG.chainName} address. Deploy the contracts and update the matching frontend config.`);
+        }
+
+        btnSubmitRegister.disabled = true;
+        btnSubmitRegister.innerText = "Confirming On-Chain Registration...";
+
+        const isAlreadyOnChain = await gigShieldContract.isRiderRegistered(signerAddress);
+        if (!isAlreadyOnChain) {
+          btnSubmitRegister.innerText = "Confirm in BridgeKey Extension...";
+          const tx = await gigShieldContract.registerRider(fullName, category);
+          btnSubmitRegister.innerText = `Waiting for ${CONFIG.chainName} Confirmation...`;
+          const receipt = await tx.wait();
+          if (!receipt || receipt.status !== 1) {
+            throw new Error("The MST registration transaction was not confirmed successfully.");
+          }
+        }
+
+        onChainRegistrationVerified = await gigShieldContract.isRiderRegistered(signerAddress);
+        if (!onChainRegistrationVerified) {
+          throw new Error("The MST transaction completed, but the rider registration could not be verified on-chain.");
+        }
+
+        btnSubmitRegister.innerText = "Saving Rider Profile...";
+        const backendData = await fetchApiJson(`${CONFIG.backendUrl || "http://localhost:3001"}/api/rider/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            fullName: fullName,
-            walletAddress: userAddress,
+            fullName,
+            walletAddress: signerAddress,
             phoneNumber: phone,
             location: loc,
             workerCategory: category
           })
         });
 
-        const backendData = await backendRes.json();
-        if (!backendData.success) {
-          throw new Error(backendData.error || "Failed to save profile to database");
+        const savedRider = backendData.rider;
+        if (!backendData.success || !savedRider ||
+            savedRider.fullName !== fullName ||
+            typeof savedRider.walletAddress !== "string" ||
+            savedRider.walletAddress.toLowerCase() !== signerAddress.toLowerCase() ||
+            savedRider.phoneNumber !== phone ||
+            savedRider.location !== loc ||
+            savedRider.workerCategory !== category) {
+          throw new Error(backendData.error || "The saved rider profile could not be verified.");
         }
 
-        // 2. Perform on-chain registration if not already registered on-chain
-        if (gigShieldContract) {
-          const isAlreadyOnChain = await gigShieldContract.isRiderRegistered(userAddress);
-          if (!isAlreadyOnChain) {
-            btnSubmitRegister.innerText = "Confirm in BridgeKey Extension...";
-            const tx = await gigShieldContract.registerRider(fullName, category);
-            btnSubmitRegister.innerText = "Mining On-Chain Profile...";
-            await tx.wait();
-          }
-        }
-
-        alert(`✓ Registration successful!\n\nWelcome to GigShield, ${fullName}. Your profile has been stored and linked to wallet ${userAddress.slice(0, 8)}...`);
+        alert(`Registration confirmed on ${CONFIG.chainName} and profile saved.\n\nWelcome, ${savedRider.fullName}.\nWallet: ${savedRider.walletAddress}`);
 
         // Refresh UI dynamically without page reload
         await refreshDashboard();
@@ -524,7 +612,10 @@
         switchTab("tab-overview");
       } catch (err) {
         console.error("Registration error:", err);
-        alert("Registration failed: " + (err.reason || err.message));
+        const detail = err.reason || err.message || "Unknown error.";
+        alert(onChainRegistrationVerified
+          ? `On-chain registration is confirmed, but profile registration did not finish: ${detail}`
+          : `Registration failed: ${detail}`);
       } finally {
         btnSubmitRegister.disabled = false;
         btnSubmitRegister.innerText = "Register On-Chain Profile";
@@ -541,13 +632,13 @@
         btnClaimFaucet.innerText = "Dispensing 500 GST...";
         const tx = await tokenContract.requestDemoTokens(userAddress);
         await tx.wait();
-        alert("✓ 500 GST demo tokens received!");
+        alert("500 GST demo tokens received!");
         await refreshDashboard();
       } catch (err) {
         alert("Faucet failed: " + (err.reason || err.message));
       } finally {
         btnClaimFaucet.disabled = false;
-        btnClaimFaucet.innerText = "🎁 Claim 500 GST";
+        btnClaimFaucet.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9m-2-5h20v5H2zm10 0v14m0-14H7.5a2.5 2.5 0 1 1 2.5-2.5C10 6 12 7 12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z"/></svg> Claim 500 GST`;
       }
     });
   }
@@ -562,13 +653,13 @@
         const amount = ethers.parseEther("10000");
         const tx = await tokenContract.approve(CONFIG.gigShieldAddress, amount);
         await tx.wait();
-        alert("✓ GigShield smart contract approved to collect micro-premiums!");
+        alert("GigShield smart contract approved to collect micro-premiums!");
         await refreshDashboard();
       } catch (err) {
         alert("Approval failed: " + (err.reason || err.message));
       } finally {
         btnApproveGST.disabled = false;
-        btnApproveGST.innerText = "🔓 Approve Allowance";
+        btnApproveGST.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Approve Allowance`;
       }
     });
   }
@@ -583,7 +674,7 @@
         const days = parseInt(selectDays.value, 10);
         const tx = await gigShieldContract.activateCoverage(days);
         await tx.wait();
-        alert(`✓ ${days}-day accident micro-insurance activated successfully!`);
+        alert(`${days}-day accident micro-insurance activated successfully!`);
         await refreshDashboard();
         await fetchRegisteredRiders();
         switchTab("tab-overview");
@@ -591,7 +682,7 @@
         alert("Activation failed: " + (err.reason || err.message));
       } finally {
         btnPayAndActivate.disabled = false;
-        btnPayAndActivate.innerText = "⚡ Pay Premium & Activate Policy";
+        btnPayAndActivate.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg> Pay Premium & Activate Policy`;
       }
     });
   }
@@ -609,13 +700,16 @@
 
   if (btnRunSimulation) {
     btnRunSimulation.addEventListener("click", async () => {
+      if (IS_MAINNET && !CONFIG.productionOracleReady) {
+        return alert("The accident simulator uses synthetic telemetry and is disabled on Mainnet until a production oracle has been reviewed and implemented.");
+      }
       if (!userAddress) return alert("Connect BridgeKey wallet first.");
 
       try {
         btnRunSimulation.disabled = true;
         btnRunSimulation.innerText = "Simulating Sensor Signal...";
 
-        const res = await fetch(`${CONFIG.backendUrl || "http://localhost:3001"}/api/accident/simulate`, {
+        const data = await fetchApiJson(`${CONFIG.backendUrl || "http://localhost:3001"}/api/accident/simulate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -625,7 +719,6 @@
           })
         });
 
-        const data = await res.json();
         if (!data.success) throw new Error(data.error);
 
         activeSimulation = data;
@@ -639,20 +732,23 @@
         alert("Simulation error: " + err.message + "\nEnsure backend is running on port 3001 (`npm run backend`).");
       } finally {
         btnRunSimulation.disabled = false;
-        btnRunSimulation.innerText = "🚨 Trigger Simulated Telematics Signal";
+        btnRunSimulation.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2m6.4.6-1.4 1.4M21 12h-2m-2.6 6.4-1.4-1.4M12 21v-2m-6.4-2.6 1.4-1.4M3 12h2m2.6-6.4 1.4 1.4"/><circle cx="12" cy="12" r="5"/></svg> Trigger Simulated Telematics Signal`;
       }
     });
   }
 
   if (btnExecutePayout) {
     btnExecutePayout.addEventListener("click", async () => {
+      if (IS_MAINNET && !CONFIG.productionOracleReady) {
+        return alert("Accident payouts are disabled on Mainnet until a production oracle has been reviewed and implemented.");
+      }
       if (!activeSimulation) return alert("Simulate an accident signal first.");
 
       try {
         btnExecutePayout.disabled = true;
         btnExecutePayout.innerText = "Oracle Verifying & Transferring Payout...";
 
-        const res = await fetch(`${CONFIG.backendUrl || "http://localhost:3001"}/api/accident/verify`, {
+        const data = await fetchApiJson(`${CONFIG.backendUrl || "http://localhost:3001"}/api/accident/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -664,7 +760,6 @@
           })
         });
 
-        const data = await res.json();
         if (!data.success) throw new Error(data.error);
 
         if (receiptBox) receiptBox.classList.remove("hidden");
@@ -672,14 +767,14 @@
         if (receiptBlock) receiptBlock.innerText = `#${data.blockNumber}`;
         if (receiptExplorerLink) receiptExplorerLink.href = data.explorerUrl;
 
-        alert("🎉 500 GST Payout successfully executed on MST Blockchain!");
+        alert("500 GST Payout successfully executed on MST Blockchain!");
         await refreshDashboard();
         await fetchRegisteredRiders();
       } catch (err) {
         alert("Oracle Verification Failed: " + err.message);
       } finally {
         btnExecutePayout.disabled = false;
-        btnExecutePayout.innerText = "⚡ Execute Smart Contract Payout (500 GST)";
+        btnExecutePayout.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg> Execute Smart Contract Payout (500 GST)`;
       }
     });
   }
@@ -708,7 +803,7 @@
             <tr>
               <td class="mono-text">${e.args[0].slice(0, 14)}...</td>
               <td class="highlight-token">+${ethers.formatEther(e.args[2])} GST</td>
-              <td class="mono-text"><a href="https://testnet.mstscan.com/tx/${e.transactionHash}" target="_blank">${e.transactionHash.slice(0, 10)}... ↗</a></td>
+              <td class="mono-text"><a href="${CONFIG.explorerUrl}/tx/${e.transactionHash}" target="_blank">${e.transactionHash.slice(0, 10)}... ↗</a></td>
               <td><span class="badge badge-success">Disbursed</span></td>
             </tr>
           `).join("");

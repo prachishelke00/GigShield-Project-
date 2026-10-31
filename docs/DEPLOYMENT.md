@@ -4,7 +4,7 @@ This guide walks through deploying the **GigShield 2.0** parametric accident mic
 
 ## Deploy the Web App to Vercel
 
-The repository is configured to serve the static frontend from `frontend/` and run the Express API as a Vercel Function. The Vercel build compiles the contracts so their ABI artifacts are bundled with the API.
+The repository is configured to serve the static frontend from `frontend/`. `POST /api/rider/register` has an explicit Vercel Function route, and the remaining API endpoints use the Express catch-all route. The Vercel build compiles the contracts so their ABI artifacts are bundled with both API functions.
 
 1. Deploy the contracts to MST Testnet with `npm run deploy:mst`. The script updates `frontend/config.js` with the deployed addresses and ABI. Commit and push that generated config change before deploying the web app; Vercel does not deploy contracts for you.
 2. Create an Upstash Redis database and copy its REST URL and REST token. Rider profiles require this persistent store because Vercel Functions cannot use the repository JSON file as durable storage.
@@ -22,17 +22,56 @@ The repository is configured to serve the static frontend from `frontend/` and r
    | `UPSTASH_REDIS_REST_TOKEN` | Upstash database REST token |
 
    Keep the verifier key server-side in Vercel settings; never put it in `frontend/config.js` or commit it. `DEPLOYER_PRIVATE_KEY` is used only when deploying contracts and should not be added to Vercel. When the deployed contract's authorized verifier is the deployer wallet, configure that same testnet key as `VERIFIER_PRIVATE_KEY` in Vercel.
-5. Deploy or redeploy the Vercel project, then check `https://<your-domain>/api/health`. A successful response reports the MST network and whether the verifier is configured.
+5. Deploy or redeploy the Vercel project, then check `https://<your-domain>/api/health`. A successful response confirms the RPC is connected to the configured MST chain ID and reports whether the verifier is configured.
+6. Test the registration endpoint with a JSON `POST` to `https://<your-domain>/api/rider/register`. The response is JSON on both success and failure. Successful registration requires the BridgeKey-signed `registerRider` transaction to confirm on-chain before the full rider profile is saved to Redis.
 
-The frontend automatically calls its same-origin `/api` endpoints on Vercel. When running locally, it continues to call `http://localhost:3001`; run `npm run backend` and `npm start` in separate terminals.
+The frontend automatically calls its same-origin `/api` endpoints on Vercel. When running locally, it calls `http://localhost:3001`; run `npm run backend` and `npm start` in separate terminals. Connect BridgeKey to MST Testnet (chain ID `91562037`). Never put a private key in frontend code.
+
+## Prepare a separate MST Mainnet deployment
+
+The Mainnet path is separate from Testnet: RPC `https://mariorpc.mstblockchain.com`, chain ID `4646` (`0x1226`), native currency MSTC (18 decimals), and explorer `https://mstscan.com`. The Mainnet RPC and chain ID were checked against MST's published Mainnet deployment documentation and the RPC's `eth_chainId` response.
+
+**Mainnet deployment is not currently production-ready.** The Testnet `GigShieldToken` has a public faucet that can mint unlimited GST and must not be deployed to Mainnet. The isolated `GigShieldMainnetToken` instead mints a fixed 1,000,000 GST supply at deployment and exposes no faucet or further mint function; this initial supply is an explicit tokenomics choice that should be reviewed before deployment. The full supply is minted to the deployer, so a distribution and payout-pool funding plan is also required. The `GigShield` contract has no ownership-transfer function; its deploying account remains the permanent owner, so design and review an appropriate multisig deployment/ownership approach before deployment. This project also generates simulated accident telemetry; Mainnet simulated accident/payout endpoints remain disabled until a production oracle is reviewed and implemented. The contract's verifier can directly authorize payouts, so secure that role appropriately.
+
+1. Copy the ignored local environment template and edit `.env`:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   Set `MAINNET_RPC_URL`, `MAINNET_DEPLOYER_PRIVATE_KEY`, and `MAINNET_VERIFIER_ADDRESS` in `.env`. Use a dedicated deployer key, keep `.env` private, and never put a private key in frontend code or Vercel. Do not copy a testnet key into Mainnet settings.
+2. Verify the Mainnet RPC without sending a transaction:
+
+   ```powershell
+   $body = '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+   Invoke-RestMethod -Uri $env:MAINNET_RPC_URL -Method Post -ContentType 'application/json' -Body $body
+   ```
+
+   The result must be `0x1226`.
+3. Run the existing tests and compile:
+
+   ```powershell
+   npm test
+   npm run build
+   ```
+4. The following command **deploys two contracts and spends real MSTC**. Do not set the confirmation variable or run it until deployment is explicitly approved. The script rechecks chain ID, estimates the combined deployment gas, deploys the fixed-supply Mainnet GST token and GigShield, and writes the separate `frontend/config.mainnet.js`. It does not deploy the demo faucet token, fund a pool, or overwrite Testnet config.
+
+   ```powershell
+   $env:MAINNET_DEPLOY_CONFIRM = 'DEPLOY_GIGSHIELD_TO_MST_MAINNET'
+   npm run deploy:mainnet
+   Remove-Item Env:MAINNET_DEPLOY_CONFIRM
+   ```
+
+5. After an approved deployment, verify both printed receipts and explorer records. Set the printed GST and GigShield addresses as `MAINNET_GST_TOKEN_ADDRESS` and `MAINNET_GIGSHIELD_ADDRESS` in the server/Vercel environment. Publish the generated `frontend/config.mainnet.js` with the frontend. Open the dashboard using `dashboard.html?network=mainnet`; normal URLs continue to use Testnet config. Mainnet mode hides the demo faucet.
+6. To configure a Mainnet backend later, set `BLOCKCHAIN_NETWORK=mainnet`, `MAINNET_RPC_URL`, `MAINNET_GIGSHIELD_ADDRESS`, and `MAINNET_GST_TOKEN_ADDRESS` in the server/Vercel environment. Mainnet health checks validate chain ID and contract code. Do not enable a Mainnet verifier key or accident payout route until a production oracle and operating controls have been independently reviewed; the current code explicitly rejects simulated payouts on Mainnet.
 
 ---
 
 ## 🔒 Security Best Practices
 
 1. **NEVER use a mainnet wallet or real funds.**
-2. Use a dedicated development account in BridgeKey or MetaMask created specifically for testnets and buildathons.
-3. Keep private keys inside `.env` only. Never commit `.env` to Git. (Pre-configured in `.gitignore`).
+2. Use a dedicated BridgeKey development account created specifically for testnets and buildathons.
+3. Keep private keys only in local `.env` files or Vercel environment settings. Never commit them or place them in frontend code. (Local `.env` is pre-configured in `.gitignore`).
 
 ---
 
@@ -102,7 +141,7 @@ npm start
 ```
 
 1. Open your browser to **`http://localhost:3000`**.
-2. Connect your wallet using **Connect BridgeKey** or **Connect MetaMask**.
+2. Connect your wallet using **Connect BridgeKey**.
 3. If connected to another chain, click the network pill to switch to **MST Testnet**.
 
 ---
