@@ -200,6 +200,52 @@
   }
 
   /**
+   * 1a. Reinitialize Provider (Handle Stale Providers)
+   */
+  async function ensureFreshProvider() {
+    try {
+      const bkProvider = getBridgeKeyProvider();
+      if (!bkProvider) {
+        throw new Error("BridgeKey wallet not detected. Please install or enable BridgeKey.");
+      }
+
+      // Test if current provider is still valid
+      if (provider) {
+        try {
+          await provider.getNetwork();
+          // Provider is still valid
+          return true;
+        } catch (err) {
+          console.warn("Provider is stale, reinitializing...", err);
+        }
+      }
+
+      // Reinitialize provider and signer
+      provider = new ethers.BrowserProvider(bkProvider);
+      signer = await provider.getSigner();
+      
+      // Verify we still have the same account
+      const currentAddress = await signer.getAddress();
+      if (currentAddress.toLowerCase() !== userAddress.toLowerCase()) {
+        throw new Error("Wallet account changed. Please reconnect your wallet.");
+      }
+
+      // Reinitialize contracts with fresh signer
+      if (CONFIG.gigShieldAddress && CONFIG.gigShieldAbi) {
+        gigShieldContract = new ethers.Contract(CONFIG.gigShieldAddress, CONFIG.gigShieldAbi, signer);
+      }
+      if (CONFIG.gstTokenAddress && CONFIG.gstTokenAbi) {
+        tokenContract = new ethers.Contract(CONFIG.gstTokenAddress, CONFIG.gstTokenAbi, signer);
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Provider reinitialization failed:", err);
+      throw new Error("BridgeKey connection lost. Please reconnect your wallet.");
+    }
+  }
+
+  /**
    * 2. Connect Wallet
    */
   async function connectWallet() {
@@ -356,6 +402,20 @@
     if (!userAddress || !provider) return;
 
     try {
+      // Check if provider is still valid, reinitialize if needed
+      try {
+        await provider.getNetwork();
+      } catch (providerErr) {
+        console.warn("Provider became stale during refresh, reinitializing...", providerErr);
+        try {
+          await ensureFreshProvider();
+        } catch (reinitErr) {
+          console.error("Could not reinitialize provider:", reinitErr);
+          // Don't throw - gracefully handle by skipping balance updates
+          return;
+        }
+      }
+
       // 1. Native gas balance
       const balanceWei = await provider.getBalance(userAddress);
       const tmstcFormatted = parseFloat(ethers.formatEther(balanceWei)).toFixed(3);
@@ -542,6 +602,12 @@
 
       let onChainRegistrationVerified = false;
       try {
+        // Ensure fresh provider before starting registration
+        btnSubmitRegister.disabled = true;
+        btnSubmitRegister.innerText = "Checking wallet connection...";
+        
+        await ensureFreshProvider();
+
         if (!provider || !signer || !gigShieldContract) {
           throw new Error("Connect BridgeKey and ensure the MST GigShield contract is configured.");
         }
@@ -561,7 +627,6 @@
           throw new Error(`No GigShield contract is deployed at the configured ${CONFIG.chainName} address. Deploy the contracts and update the matching frontend config.`);
         }
 
-        btnSubmitRegister.disabled = true;
         btnSubmitRegister.innerText = "Confirming On-Chain Registration...";
 
         const isAlreadyOnChain = await gigShieldContract.isRiderRegistered(signerAddress);
@@ -612,7 +677,15 @@
         switchTab("tab-overview");
       } catch (err) {
         console.error("Registration error:", err);
-        const detail = err.reason || err.message || "Unknown error.";
+        let detail = err.reason || err.message || "Unknown error.";
+        
+        // Handle specific error cases with better messages
+        if (detail.includes("could not coalesce error") || detail.includes("provider destroyed")) {
+          detail = "BridgeKey connection was interrupted. Please refresh the page and reconnect your wallet.";
+        } else if (detail.includes("user rejected")) {
+          detail = "Transaction was rejected in BridgeKey wallet.";
+        }
+        
         alert(onChainRegistrationVerified
           ? `On-chain registration is confirmed, but profile registration did not finish: ${detail}`
           : `Registration failed: ${detail}`);
@@ -629,13 +702,21 @@
 
       try {
         btnClaimFaucet.disabled = true;
+        btnClaimFaucet.innerText = "Checking connection...";
+        
+        await ensureFreshProvider();
+        
         btnClaimFaucet.innerText = "Dispensing 500 GST...";
         const tx = await tokenContract.requestDemoTokens(userAddress);
         await tx.wait();
         alert("500 GST demo tokens received!");
         await refreshDashboard();
       } catch (err) {
-        alert("Faucet failed: " + (err.reason || err.message));
+        let detail = err.reason || err.message || "Unknown error";
+        if (detail.includes("could not coalesce error") || detail.includes("provider destroyed")) {
+          detail = "BridgeKey connection was interrupted. Please refresh the page and reconnect.";
+        }
+        alert("Faucet failed: " + detail);
       } finally {
         btnClaimFaucet.disabled = false;
         btnClaimFaucet.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9m-2-5h20v5H2zm10 0v14m0-14H7.5a2.5 2.5 0 1 1 2.5-2.5C10 6 12 7 12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z"/></svg> Claim 500 GST`;
@@ -649,6 +730,10 @@
 
       try {
         btnApproveGST.disabled = true;
+        btnApproveGST.innerText = "Checking connection...";
+        
+        await ensureFreshProvider();
+        
         btnApproveGST.innerText = "Confirming Approval...";
         const amount = ethers.parseEther("10000");
         const tx = await tokenContract.approve(CONFIG.gigShieldAddress, amount);
@@ -656,7 +741,11 @@
         alert("GigShield smart contract approved to collect micro-premiums!");
         await refreshDashboard();
       } catch (err) {
-        alert("Approval failed: " + (err.reason || err.message));
+        let detail = err.reason || err.message || "Unknown error";
+        if (detail.includes("could not coalesce error") || detail.includes("provider destroyed")) {
+          detail = "BridgeKey connection was interrupted. Please refresh the page and reconnect.";
+        }
+        alert("Approval failed: " + detail);
       } finally {
         btnApproveGST.disabled = false;
         btnApproveGST.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Approve Allowance`;
@@ -670,6 +759,10 @@
 
       try {
         btnPayAndActivate.disabled = true;
+        btnPayAndActivate.innerText = "Checking connection...";
+        
+        await ensureFreshProvider();
+        
         btnPayAndActivate.innerText = "Activating on MST...";
         const days = parseInt(selectDays.value, 10);
         const tx = await gigShieldContract.activateCoverage(days);
@@ -679,7 +772,11 @@
         await fetchRegisteredRiders();
         switchTab("tab-overview");
       } catch (err) {
-        alert("Activation failed: " + (err.reason || err.message));
+        let detail = err.reason || err.message || "Unknown error";
+        if (detail.includes("could not coalesce error") || detail.includes("provider destroyed")) {
+          detail = "BridgeKey connection was interrupted. Please refresh the page and reconnect.";
+        }
+        alert("Activation failed: " + detail);
       } finally {
         btnPayAndActivate.disabled = false;
         btnPayAndActivate.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg> Pay Premium & Activate Policy`;
